@@ -1,7 +1,7 @@
 ---
 name: decile-reconciliation
 description: >
-  Cash reconciliation on Decile Hub (*.decilehub.com). Use this skill whenever Katrina
+  Cash reconciliation on Decile Hub (*.decilehub.com). Use this skill whenever a member of fund accounting
   asks to reconcile transactions, work through unreconciled items, or train on a new fund's
   reconcile page. Covers capital call payments, management fees, bank charges, investment wires,
   management company (ManCo) expenses, and how to flag unclear transactions for human review.
@@ -25,7 +25,7 @@ Every unreconciled bank transaction needs four fields filled before clicking Rec
 
 The UI uses TomSelect dropdowns. Native select manipulation doesn't work — always use the TomSelect API and fire events (see Technical section below).
 
-**⛔ HARD RULE — $75 IRS receipt threshold (applies to ALL entities — fund AND ManCo):** The IRS requires a receipt for any business expense of $75 or more ([IRS $75 receipt rule](https://www.fylehq.com/blog/irs-75-dollar-receipt-rule)). Do **not** reconcile any outgoing expense transaction at or above $75 unless a receipt is already on file. This applies to every entity type — fund LPs, management companies, GP entities, and any other Hub entity. Leave transactions at or above $75 unreconciled and note them for Katrina to attach the receipt first. Transactions strictly under $75 may be reconciled without a receipt.
+**⛔ HARD RULE — $75 IRS receipt threshold (applies to ALL entities — fund AND ManCo):** The IRS requires a receipt for any business expense of $75 or more ([IRS $75 receipt rule](https://www.fylehq.com/blog/irs-75-dollar-receipt-rule)). Do **not** reconcile any outgoing expense transaction at or above $75 unless a receipt is already on file. This applies to every entity type — fund LPs, management companies, GP entities, and any other Hub entity. Leave transactions at or above $75 unreconciled and note them for a member of fund accounting to attach the receipt first. Transactions strictly under $75 may be reconciled without a receipt.
 
 **Exceptions — vendors with invoices already on file (reconcile at any amount, no receipt needed):**
 - **VC Lab / Decile Group / Decile Capital** — Decile is our company and invoices are always on file. Reconcile regardless of amount.
@@ -38,7 +38,7 @@ The UI uses TomSelect dropdowns. Native select manipulation doesn't work — alw
 
 ## Final Step: Mark as Reconciled
 
-When the queue is empty **and there are no remaining transactions that need manual review by Katrina**, click the "Set as Reconciled" button to close out the reconciliation period. This is a two-step process — the first click opens a confirmation modal, the second confirms it:
+When the queue is empty **and there are no remaining transactions that need manual review by a member of fund accounting**, click the "Set as Reconciled" button to close out the reconciliation period. This is a two-step process — the first click opens a confirmation modal, the second confirms it:
 
 ```javascript
 // Step 1: Click the page-level button to open the confirmation modal
@@ -138,7 +138,7 @@ JSON.stringify(caAccounts.map(o => ({ value: o.value, text: o.text })));
 
 Bank descriptions are often abbreviated (e.g., "THAI TA" → ca_494 Thai Ta, "YDNTRUST" → ca_492 YDNUB Discretionary Trust). Search the options list for partial matches.
 
-**Partial name matches:** A partial match is acceptable when the match is clearly the same person/entity with no ambiguity. For example, "Andre Moura" in the dropdown is close enough to reconcile a wire from "Andre Chambel Croft Moura". When in doubt, ask Katrina.
+**Partial name matches:** A partial match is acceptable when the match is clearly the same person/entity with no ambiguity. For example, "Andre Moura" in the dropdown is close enough to reconcile a wire from "Andre Chambel Croft Moura". When in doubt, ask a member of fund accounting.
 
 ---
 
@@ -190,13 +190,13 @@ function reconcileCapitalCall(rowIndex, caId) {
 
 **Capital account ID format:** `ca_XXXX` — get these from the Who dropdown (see Step 2 above). Never guess an ID.
 
-**⛔ HARD RULE — Money Due must match wire amount:** Before reconciling any capital call, check the **Money Due** field in the left panel of the transaction. If Money Due is blank ("-") or shows a different dollar amount than the wire, do **not** reconcile. A blank or $0 Money Due means the LP has already paid in full (or the capital account is overfunded) — reconciling the wire would double-count the payment. Leave unreconciled and flag for Katrina.
+**⛔ HARD RULE — Money Due must match wire amount:** Before reconciling any capital call, check the **Money Due** field in the left panel of the transaction. If Money Due is blank ("-") or shows a different dollar amount than the wire, do **not** reconcile. A blank or $0 Money Due means the LP has already paid in full (or the capital account is overfunded) — reconciling the wire would double-count the payment. Leave unreconciled and flag for a member of fund accounting.
 
 *Example: Wire is $10,000 but Money Due shows "-" (i.e., $0) → do not reconcile.*
 
-**⛔ HARD RULE — Trust vs. individual wire mismatch:** If the capital account is a trust (e.g., "Edward H Wright Trust") but the wire description shows an individual name (e.g., "EDWARD HENNEN WRIGHT" with no "Trust"), do NOT reconcile. The wire must come from the trust account itself, not an individual account. This is a wire compliance requirement. Leave unreconciled and let Katrina review.
+**⛔ HARD RULE — Trust vs. individual wire mismatch:** If the capital account is a trust (e.g., "Edward H Wright Trust") but the wire description shows an individual name (e.g., "EDWARD HENNEN WRIGHT" with no "Trust"), do NOT reconcile. The wire must come from the trust account itself, not an individual account. This is a wire compliance requirement. Leave unreconciled and let a member of fund accounting review.
 
-**⛔ HARD RULE — Partial name matches:** If a wire description partially overlaps a capital account name but key identifiers differ (e.g., wire says "DONNA LOUISE MCELRATH THOMAS CHRIST" and the only McElrath account is "The Ken McElrath 2018 Trust" — different first name), do NOT reconcile. Leave unreconciled and flag for Katrina. A match must be clear and unambiguous.
+**⛔ HARD RULE — Partial name matches:** If a wire description partially overlaps a capital account name but key identifiers differ (e.g., wire says "DONNA LOUISE MCELRATH THOMAS CHRIST" and the only McElrath account is "The Ken McElrath 2018 Trust" — different first name), do NOT reconcile. Leave unreconciled and flag for a member of fund accounting. A match must be clear and unambiguous.
 
 ---
 
@@ -241,7 +241,7 @@ function reconcileMgmtFee(rowIndex, whoId) {
 
 **Exception — organizational costs:** If the payment is large ($30,000–$50,000) AND the fund appears to be new, it may be organizational/formation costs rather than ongoing admin fees. Use a different GL account in that case.
 
-**⛔ HARD RULE:** If any single Vc Lab / Decile Group payment is **over $10,000**, stop and check in with Katrina before reconciling.
+**⛔ HARD RULE:** If any single Vc Lab / Decile Group payment is **over $10,000**, stop and check in with a member of fund accounting before reconciling.
 
 **$75 receipt rule does NOT apply** to VC Lab / Decile Group payments — invoices are always on file. Reconcile at any amount.
 
@@ -289,7 +289,7 @@ Also applies to: international wire fees, foreign exchange fees.
 - **Who:** `org_376714` (Spicer Jeffries / Cherry Bekaert) or look up the org in the Who dropdown
 - **Why:** `Fee payment`
 - **$75 receipt rule does NOT apply** — tax prep invoices are always on file. Reconcile at any amount.
-- **1099 Reportable Transaction:** ✅ **Always check this box** for all Spicer Jeffries and Cherry Bekaert payments — ⚠️ **requires account admin access**. The reconciliation will save but checking the 1099 box will return "Only account admins are allowed to do that." Katrina must check this manually after reconciling.
+- **1099 Reportable Transaction:** ✅ **Always check this box** for all Spicer Jeffries and Cherry Bekaert payments — ⚠️ **requires account admin access**. The reconciliation will save but checking the 1099 box will return "Only account admins are allowed to do that." a member of fund accounting must check this manually after reconciling.
 
 ---
 
@@ -297,9 +297,9 @@ Also applies to: international wire fees, foreign exchange fees.
 
 Management company (ManCo) entities receive SaaS subscriptions, software tools, meals, travel, and other operating expenses. Apply these rules when reconciling a ManCo reconcile page.
 
-**⛔ HARD RULE — $75 cap (IRS receipt rule):** Do **not** reconcile any ManCo expense over $75. The IRS requires a receipt for any business expense of $75 or more — see the [IRS $75 receipt rule](https://www.fylehq.com/blog/irs-75-dollar-receipt-rule). Transactions at or above $75 must have a receipt on file before reconciling. Leave them unreconciled and note them for Katrina to attach the receipt first.
+**⛔ HARD RULE — $75 cap (IRS receipt rule):** Do **not** reconcile any ManCo expense over $75. The IRS requires a receipt for any business expense of $75 or more — see the [IRS $75 receipt rule](https://www.fylehq.com/blog/irs-75-dollar-receipt-rule). Transactions at or above $75 must have a receipt on file before reconciling. Leave them unreconciled and note them for a member of fund accounting to attach the receipt first.
 
-**⛔ HARD RULE — Credit card autopay rows (IO AUTOPAY / Mercury Credit):** Do **not** reconcile rows that appear to be credit card autopay payments (descriptions like "IO AUTOPAY", "Mercury Credit", or similar). These require information from the GP to categorize correctly. Leave them unreconciled and flag for Katrina with a note that GP info is needed.
+**⛔ HARD RULE — Credit card autopay rows (IO AUTOPAY / Mercury Credit):** Do **not** reconcile rows that appear to be credit card autopay payments (descriptions like "IO AUTOPAY", "Mercury Credit", or similar). These require information from the GP to categorize correctly. Leave them unreconciled and flag for a member of fund accounting with a note that GP info is needed.
 
 **Categorization rules by merchant type:**
 
@@ -376,13 +376,13 @@ for (const row of rows) {
 results.join('\n');
 ```
 
-**If vendor not in Who dropdown:** Skip the row (leave unreconciled). Do not force a match. Note the vendor name for Katrina.
+**If vendor not in Who dropdown:** Skip the row (leave unreconciled). Do not force a match. Note the vendor name for a member of fund accounting.
 
 **Special case — MacPaw / CleanMyMac:** MacPaw products are sold through Paddle as payment processor. When you see MacPaw or CleanMyMac in the description, search for "paddle" (not "macpaw") in the Who dropdown → org_1457025 (Paddle.net).
 
 ---
 
-### ⚠️ Investment Wire (PARTIALLY TRAINED — confirm with Katrina)
+### ⚠️ Investment Wire (PARTIALLY TRAINED — confirm with a member of fund accounting)
 
 **When:** Outbound wire to a portfolio company. Amount is large and negative. Description references a company name.
 
@@ -393,7 +393,7 @@ results.join('\n');
 
 **Before reconciling:**
 1. Verify the portfolio company exists in the Who dropdown (search by name)
-2. If it doesn't exist: go to Investments → Schedule of Investments → "Add a Company" → find or create the org → Continue. If the org doesn't exist either, stop and ask Katrina to set it up (requires creating org + portfolio company + funding round).
+2. If it doesn't exist: go to Investments → Schedule of Investments → "Add a Company" → find or create the org → Continue. If the org doesn't exist either, stop and ask a member of fund accounting to set it up (requires creating org + portfolio company + funding round).
 3. Verify a signed investment agreement exists in the fund's data room with a matching amount
 
 **Adding a portfolio company (when org exists):**
@@ -512,7 +512,7 @@ const label = row.querySelector('label[for="firm_admin_accounting_transaction_is
 label?.click();
 ```
 
-⚠️ **Account admin access required.** The reconciliation saves successfully, but checking the 1099 box may return "Only account admins are allowed to do that." In that case, leave a note for Katrina to check it manually — she has admin access.
+⚠️ **Account admin access required.** The reconciliation saves successfully, but checking the 1099 box may return "Only account admins are allowed to do that." In that case, leave a note for a member of fund accounting to check it manually — she has admin access.
 
 ---
 
@@ -810,7 +810,7 @@ When a fund's bank account is not synced and transactions need to be manually ad
 4. Leave Transaction Type / What / Who / Why **blank** — transactions will land in the reconcile queue for individual categorization
 5. Upload the CSV and proceed through the column mapping (step 2) and preview (step 3)
 
-**⚠️ File upload limitation:** The browser extension currently cannot upload files to financial sites directly. Katrina must upload the CSV manually. Prepare the reformatted file and save it to the workspace folder, then ask Katrina to upload it from there.
+**⚠️ File upload limitation:** The browser extension currently cannot upload files to financial sites directly. a member of fund accounting must upload the CSV manually. Prepare the reformatted file and save it to the workspace folder, then ask a member of fund accounting to upload it from there.
 
 The Mercury CSV export columns to use:
 - `Date (UTC)` → Date
@@ -837,7 +837,7 @@ After completing a **bulk reconciliation run** (3 or more funds in a single sess
 
 Lists every transaction that could *not* be reconciled, with the reason and recommended next action. Rules for inclusion:
 
-- **Include:** transactions still in an unreconciled queue after the session where the reason needs Katrina's attention (ambiguous LP, missing receipt ≥$75, unknown vendor, investment wire needing docs, etc.)
+- **Include:** transactions still in an unreconciled queue after the session where the reason needs a member of fund accounting's attention (ambiguous LP, missing receipt ≥$75, unknown vendor, investment wire needing docs, etc.)
 - **Exclude:** Any transaction with a Hub flag badge (`FLAGGED:`, `INVESTMENT DOCS OPEN`, `MISSING DOCS`, or `ENTITY MISMATCH OPEN`) — Hub is tracking those independently
 - **Exclude:** Any transaction whose fund's queue is now empty (reconciled since the prior session)
 - Before writing this tab, do the pre-flight scan below on each exception fund
@@ -853,11 +853,11 @@ Color coding (openpyxl PatternFill):
 
 **Tab 2 — "Reconciliation Log"**
 
-One row per transaction reconciled during the session. For capital calls, always populate the Capital Account ID so Katrina can verify the correct LP was matched.
+One row per transaction reconciled during the session. For capital calls, always populate the Capital Account ID so a member of fund accounting can verify the correct LP was matched.
 
 Columns: `Fund Name | Entity ID | Bank Acct | Txn Date | Description / Payee | Amount ($) | Txn Type | GL Account | Counterparty (Who) | Capital Account ID | Notes / Capital Call Detail`
 
-Use common names (e.g. "ELM Partners", "Uber") everywhere — not Hub internal IDs — except Capital Account ID which should stay as `ca_XXXX` for Katrina's reference.
+Use common names (e.g. "ELM Partners", "Uber") everywhere — not Hub internal IDs — except Capital Account ID which should stay as `ca_XXXX` for a member of fund accounting's reference.
 
 ### File naming and location
 
@@ -906,4 +906,4 @@ rows.map((r,i) => {
 - Large unusual payments (e.g., Ranchos Ventures CHISOS LLC $100K, Team Ignite SPACEX/SYDECAR)
 - Riceberg: Transfer In rows (no amount, GL 108) — management fee inbounds? Categorization TBD
 
-When encountering these, present to Katrina with a description and ask before reconciling.
+When encountering these, present to a member of fund accounting with a description and ask before reconciling.
