@@ -12,6 +12,54 @@ description: >
   to a /accounting/reconcile URL on decilehub.com.
 ---
 
+## Session Start — What's New
+
+At the start of every reconciliation session, **before doing anything else**, check for rule updates:
+
+1. **Read** the last-seen commit SHA from: `[workspace folder]/skill_last_commit.txt`
+   - If the file doesn't exist, this is a first session — skip to step 4.
+
+2. **Fetch recent commits** for this skill file:
+   ```
+   GET https://api.github.com/repos/katrinamprice/FundAccounting/commits?path=SKILL.md&per_page=20
+   Authorization: token [GITHUB_WRITE_TOKEN if set, otherwise omit]
+   ```
+
+3. **Compare** the latest commit SHA to the stored SHA. Collect every commit that is newer
+   (i.e., every commit between the stored SHA and the current HEAD, exclusive of the stored one).
+
+4. **If there are new commits**, display a "What's New" banner before proceeding:
+
+   > 📋 **Skill updates since your last session:**
+   > - [commit message] — [date]
+   >
+   > *(Tip: ask "show me what changed in the [rule name] rule" for details)*
+
+5. **Update** `skill_last_commit.txt` in the workspace folder with the current HEAD SHA.
+   Use the Write tool to save it. If the file doesn't exist yet, create it.
+
+6. If there are no new commits, continue silently — no banner needed.
+
+### Commit message convention (for whoever updates the skill)
+
+To make the "What's New" summary meaningful, all skill updates pushed via Claude should use
+descriptive commit messages in this format:
+
+- `Add rule: [description] — by [your name]`
+- `Update rule: [description] — by [your name]`
+- `Remove rule: [description] — by [your name]`
+- `Fix: [description] — by [your name]`
+
+**Examples:**
+- `Add rule: IO AUTOPAY rows require GP info before reconciling — by Katrina`
+- `Update rule: Spicer Jeffries $75 threshold exception — by Marcus`
+- `Add rule: New fund Dash VC entity IDs — by Katrina`
+
+This way the "What's New" banner is self-explanatory to any team member starting a session.
+
+---
+
+
 # Decile Hub Cash Reconciliation
 
 ## Overview
