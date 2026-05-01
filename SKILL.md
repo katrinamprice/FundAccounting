@@ -762,6 +762,7 @@ Some funds have a dedicated file in the `funds/` subdirectory with their entity 
 | Team Ignite (any entity) | `funds/teamignite.md` |
 | Riceberg (any entity) | `funds/riceberg.md` |
 | Evio Venture Capital (any entity) | `funds/evio.md` |
+| Tachles VC (any entity) | `funds/tachles.md` |
 
 The file path is relative to this skill's directory. To load, e.g.: `Read("<skill_dir>/funds/teamignite.md")`.
 
