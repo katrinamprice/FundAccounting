@@ -14,31 +14,43 @@ description: >
 
 ## Session Start — What's New
 
-At the start of every reconciliation session, **before doing anything else**, check for rule updates:
+At the start of every reconciliation session, **before doing anything else**, sync the shared repo and check for updates:
 
-1. **Read** the last-seen commit SHA from: `[workspace folder]/skill_last_commit.txt`
+1. **Clone or update the repo** using the bash tool:
+   ```bash
+   # If repo already exists, pull latest; otherwise clone fresh
+   if [ -d /tmp/FundAccounting/.git ]; then
+     git -C /tmp/FundAccounting pull --ff-only https://[GITHUB_WRITE_TOKEN]@github.com/katrinamprice/FundAccounting.git main 2>&1
+   else
+     git clone --depth 5 https://[GITHUB_WRITE_TOKEN]@github.com/katrinamprice/FundAccounting.git /tmp/FundAccounting 2>&1
+   fi
+   ```
+   All reference files (entity IDs, fund files, slugs) are now at **`REPO_DIR = /tmp/FundAccounting`**.
+
+2. **Read** the last-seen commit SHA from: `[workspace folder]/skill_last_commit.txt`
    - If the file doesn't exist, this is a first session — skip to step 4.
 
-2. **Fetch recent commits** for this skill file:
-   ```
-   GET https://api.github.com/repos/katrinamprice/FundAccounting/commits?path=SKILL.md&per_page=20
-   Authorization: token [GITHUB_WRITE_TOKEN if set, otherwise omit]
+3. **Get the current HEAD SHA** via bash:
+   ```bash
+   git -C /tmp/FundAccounting log -1 --format='%H %s %ad' --date=short
    ```
 
-3. **Compare** the latest commit SHA to the stored SHA. Collect every commit that is newer
-   (i.e., every commit between the stored SHA and the current HEAD, exclusive of the stored one).
+4. **Compare** the HEAD SHA to the stored SHA. Collect every commit that is newer:
+   ```bash
+   git -C /tmp/FundAccounting log --oneline --format='%s — %ad' --date=short [stored_sha]..HEAD
+   ```
 
-4. **If there are new commits**, display a "What's New" banner before proceeding:
+5. **If there are new commits**, display a "What's New" banner before proceeding:
 
    > 📋 **Skill updates since your last session:**
    > - [commit message] — [date]
    >
    > *(Tip: ask "show me what changed in the [rule name] rule" for details)*
 
-5. **Update** `skill_last_commit.txt` in the workspace folder with the current HEAD SHA.
+6. **Update** `skill_last_commit.txt` in the workspace folder with the current HEAD SHA.
    Use the Write tool to save it. If the file doesn't exist yet, create it.
 
-6. If there are no new commits, continue silently — no banner needed.
+7. If there are no new commits, continue silently — no banner needed.
 
 ### Commit message convention (for whoever updates the skill)
 
@@ -749,7 +761,7 @@ On some funds, the Add a Company slideover renders off-screen. Resize browser to
 
 ## Fund Reference
 
-**Full fund list:** `fund-manifest.csv` (bundled with this skill — 273 active funds). Columns: `order, name, slug, fund_db_id, ptf_legal_name, owner_name, owner_email, va, base_ids, in_partners_track, mgmt_fee_url, capital_accounts_url`.
+**Full fund list:** `entities.csv` in the repo (`/tmp/FundAccounting/entities.csv`) — 7,789 entities across all Hub funds. Columns: `ID, Obscure ID, Entity, Type, Account Subdomain, dashboard_url`.
 
 **Reconcile URL pattern:** Try the short form first: `https://[slug].decilehub.com/accounting/reconcile`. This redirects automatically for most funds. If it returns a **404**, use the entity ID lookup below to find the full path.
 
@@ -764,23 +776,37 @@ Some funds have a dedicated file in the `funds/` subdirectory with their entity 
 | Evio Venture Capital (any entity) | `funds/evio.md` |
 | Tachles VC (any entity) | `funds/tachles.md` |
 
-The file path is relative to this skill's directory. To load, e.g.: `Read("<skill_dir>/funds/teamignite.md")`.
+Files are in the cloned repo. Load with e.g.: `Read("/tmp/FundAccounting/funds/teamignite.md")`.
 
 As new funds accumulate custom transaction patterns or org IDs, add a new file to `funds/` and add it to this table.
 
 ### Entity ID Lookup (when short URL 404s)
 
-`hub_slugs.json` (bundled with this skill) maps every entity ID to its slug — 7,789 entries covering all Hub funds. Use it to find the entity IDs for a given slug, then try each one until you land on the right reconcile page:
+Two reference files are available in the repo at `/tmp/FundAccounting/` (cloned at session start):
 
+- **`entities.csv`** — 7,789 rows: `ID, Obscure ID, Entity, Type, Account Subdomain, dashboard_url`. The **Obscure ID** column is the entity ID used in Hub URLs. This is the preferred lookup — search by name or slug.
+- **`hub_slugs.json`** — maps entity ID → slug (legacy format, still useful for reverse lookups).
+
+**Look up entity IDs by slug (preferred):**
+```python
+import csv
+with open('/tmp/FundAccounting/entities.csv') as f:
+    rows = list(csv.DictReader(f))
+slug = "energymix"  # replace with target slug
+matches = [r for r in rows if r['Account Subdomain'] == slug]
+for r in matches:
+    print(r['Obscure ID'], r['Entity'], r['Type'])
+# e.g. kKkzY68j  Energy Mix Ventures Fund I, LP  Fund
+```
+
+**Or use hub_slugs.json for a quick ID→slug reverse lookup:**
 ```python
 import json
-skill_dir = "<base directory shown at skill load time>"
-with open(f"{skill_dir}/hub_slugs.json") as f:
+with open('/tmp/FundAccounting/hub_slugs.json') as f:
     data = json.load(f)
-slug = "energymix"  # replace with target slug
+slug = "energymix"
 ids = [eid for eid, s in data.items() if s == slug]
 print(ids)
-# e.g. ['kKkzY68j', '3nzwYG8m', '9nG9mWKm']
 ```
 
 Then navigate to `https://[slug].decilehub.com/firm_admin/entities/[ID]/accounting/reconcile` for each ID until you reach the correct reconcile page. As an alternative to Python, you can also extract the entity ID from any page link on the fund's dashboard (look for `/firm_admin/entities/[ID]/` in the href attributes).
